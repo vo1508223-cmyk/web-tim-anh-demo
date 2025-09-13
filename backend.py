@@ -77,5 +77,7 @@ async def search_image(request: Request, event_name: str = Form(...), image: Upl
     return {"matching_images": []}
 
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8080)
+    import uvicorn, os
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
+
