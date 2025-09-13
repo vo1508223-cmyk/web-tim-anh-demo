@@ -3,3 +3,6 @@ uvicorn
 python-multipart
 aiofiles
 aiorun
+face_recognition
+numpy
+Pillow
