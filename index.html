@@ -12,6 +12,8 @@
         .btn-primary:hover:not(:disabled) { background-color: #166fe5; }
         .btn-secondary { background-color: #e4e6eb; color: #050505; font-weight: bold; padding: 10px 20px; border-radius: 8px; transition: background-color 0.2s; }
         .btn-secondary:hover { background-color: #d8dadf; }
+        .btn-danger { background-color: #fa383e; color: white; font-weight: 500; padding: 4px 8px; border-radius: 6px; transition: background-color 0.2s; }
+        .btn-danger:hover { background-color: #e31319; }
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid #1877f2; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .tab-button { padding: 10px 20px; font-weight: 500; cursor: pointer; border-bottom: 2px solid transparent; }
@@ -22,7 +24,7 @@
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
-    <div class="card p-8 w-full max-w-2xl text-center">
+    <div class="card p-8 w-full max-w-4xl text-center">
         <!-- Tabs -->
         <div class="flex border-b mb-6">
             <button id="search-tab-button" class="tab-button active">Tìm Ảnh Của Bạn</button>
@@ -66,35 +68,59 @@
 
         <!-- Admin Section -->
         <div id="admin-view" class="hidden">
-            <header class="mb-8">
-                <h1 class="text-4xl font-bold text-gray-800">Tạo & Quản Lý Sự Kiện</h1>
-                <p class="text-gray-600 mt-2">Nhập tên sự kiện và tải lên tất cả các ảnh thuộc về sự kiện đó.</p>
+            <header class="mb-6">
+                <h1 class="text-4xl font-bold text-gray-800">Quản Lý Sự Kiện</h1>
             </header>
-            <main>
-                <div class="mb-6 text-left">
-                    <label for="event-name-input" class="block font-medium text-gray-700 mb-2">Tên sự kiện mới:</label>
-                    <input type="text" id="event-name-input" class="form-input" placeholder="Ví dụ: Lễ Tốt Nghiệp 2025">
+            
+            <!-- View: Danh sách sự kiện -->
+            <div id="admin-event-list-view">
+                <div class="bg-gray-50 p-4 rounded-lg border mb-6 text-left">
+                    <h2 class="text-lg font-semibold mb-2">Tạo Sự Kiện Mới</h2>
+                    <input type="text" id="new-event-name-input" class="form-input mb-2" placeholder="Nhập tên sự kiện mới...">
+                    <input type="file" id="new-event-upload" class="hidden" accept="image/*" multiple>
+                    <button id="new-event-select-photos-button" class="btn-secondary w-full mb-2">Chọn ảnh để tải lên...</button>
+                    <p id="new-event-files-info" class="text-sm text-gray-500"></p>
+                    <button id="create-new-event-button" class="btn-primary w-full mt-2 opacity-50 cursor-not-allowed" disabled>Tạo Mới</button>
                 </div>
-                <div class="mb-6">
-                    <label for="event-upload" class="block text-left font-medium text-gray-700 mb-2">Chọn các ảnh của sự kiện:</label>
-                    <input type="file" id="event-upload" class="hidden" accept="image/*" multiple>
-                    <button id="event-upload-button" class="btn-secondary w-full">Chọn nhiều ảnh...</button>
-                    <p id="files-selected-info" class="text-sm text-gray-500 mt-2"></p>
+
+                <h2 class="text-lg font-semibold mb-4 text-left">Các Sự Kiện Hiện Có</h2>
+                <div id="admin-events-container" class="space-y-3">
+                    <!-- Event list will be inserted here by JS -->
                 </div>
-                <button id="submit-event-photos-button" class="btn-primary w-full opacity-50 cursor-not-allowed" disabled>Tạo Sự Kiện & Tải Ảnh Lên</button>
-                <p id="admin-status" class="mt-4 font-medium"></p>
-            </main>
+            </div>
+
+            <!-- View: Quản lý chi tiết một sự kiện -->
+            <div id="admin-manage-event-view" class="hidden text-left">
+                <button id="back-to-list-button" class="btn-secondary mb-4">< Quay lại danh sách</button>
+                <h2 class="text-2xl font-bold mb-4">Quản lý sự kiện: "<span id="manage-event-name"></span>"</h2>
+                
+                <div class="bg-gray-50 p-4 rounded-lg border mb-6">
+                    <h3 class="text-lg font-semibold mb-2">Thêm Ảnh Vào Sự Kiện Này</h3>
+                    <input type="file" id="add-photos-upload" class="hidden" accept="image/*" multiple>
+                    <button id="add-photos-select-button" class="btn-secondary w-full mb-2">Chọn ảnh để thêm...</button>
+                    <p id="add-photos-files-info" class="text-sm text-gray-500"></p>
+                    <button id="add-photos-submit-button" class="btn-primary w-full mt-2 opacity-50 cursor-not-allowed" disabled>Thêm Ảnh</button>
+                </div>
+                
+                <h3 class="text-lg font-semibold mb-4">Các ảnh trong sự kiện:</h3>
+                <div id="admin-images-grid" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4">
+                    <!-- Image grid will be inserted here by JS -->
+                </div>
+            </div>
+             <p id="admin-global-status" class="mt-4 font-medium h-6"></p>
         </div>
     </div>
 
     <script>
         const API_BASE_URL = 'http://127.0.0.1:8000'; // Sẽ thay thế bằng link Replit của bạn
 
-        // Elements
+        // --- Common Elements ---
         const searchTabButton = document.getElementById('search-tab-button');
         const adminTabButton = document.getElementById('admin-tab-button');
         const searchView = document.getElementById('search-view');
         const adminView = document.getElementById('admin-view');
+        
+        // --- Search View Elements ---
         const uploadSection = document.getElementById('upload-section');
         const resultsSection = document.getElementById('results-section');
         const eventSelect = document.getElementById('event-select');
@@ -107,15 +133,32 @@
         const loadingText = document.getElementById('loading-text');
         const resultsGrid = document.getElementById('results-grid');
         const backButton = document.getElementById('back-button');
-        const eventNameInput = document.getElementById('event-name-input');
-        const eventUpload = document.getElementById('event-upload');
-        const eventUploadButton = document.getElementById('event-upload-button');
-        const submitEventPhotosButton = document.getElementById('submit-event-photos-button');
-        const filesSelectedInfo = document.getElementById('files-selected-info');
-        const adminStatus = document.getElementById('admin-status');
 
-        // Function to fetch and populate events
-        async function loadEvents() {
+        // --- Admin View Elements ---
+        const adminGlobalStatus = document.getElementById('admin-global-status');
+        const adminEventListView = document.getElementById('admin-event-list-view');
+        const adminManageEventView = document.getElementById('admin-manage-event-view');
+        const backToListButton = document.getElementById('back-to-list-button');
+        const manageEventNameSpan = document.getElementById('manage-event-name');
+        
+        // Create new event elements
+        const newEventNameInput = document.getElementById('new-event-name-input');
+        const newEventUpload = document.getElementById('new-event-upload');
+        const newEventSelectPhotosButton = document.getElementById('new-event-select-photos-button');
+        const newEventFilesInfo = document.getElementById('new-event-files-info');
+        const createNewEventButton = document.getElementById('create-new-event-button');
+        const adminEventsContainer = document.getElementById('admin-events-container');
+
+        // Manage existing event elements
+        const addPhotosUpload = document.getElementById('add-photos-upload');
+        const addPhotosSelectButton = document.getElementById('add-photos-select-button');
+        const addPhotosFilesInfo = document.getElementById('add-photos-files-info');
+        const addPhotosSubmitButton = document.getElementById('add-photos-submit-button');
+        const adminImagesGrid = document.getElementById('admin-images-grid');
+
+        // --- GLOBAL FUNCTIONS ---
+
+        async function loadEventsForUser() {
             try {
                 const response = await fetch(`${API_BASE_URL}/events/`);
                 if (!response.ok) throw new Error('Không thể tải danh sách sự kiện.');
@@ -137,16 +180,16 @@
             }
         }
         
-        // Initial load
-        window.addEventListener('load', loadEvents);
+        // --- TAB SWITCHING LOGIC ---
+        
+        window.addEventListener('load', loadEventsForUser);
 
-        // Tab switching logic
         searchTabButton.addEventListener('click', () => {
             searchView.classList.remove('hidden');
             adminView.classList.add('hidden');
             searchTabButton.classList.add('active');
             adminTabButton.classList.remove('active');
-            loadEvents(); // Reload events when switching to search tab
+            loadEventsForUser(); // Reload events for user when switching
         });
 
         adminTabButton.addEventListener('click', () => {
@@ -154,9 +197,11 @@
             adminView.classList.remove('hidden');
             searchTabButton.classList.remove('active');
             adminTabButton.classList.add('active');
+            showAdminEventListView(); // Show the main admin view
         });
+
+        // --- SEARCH VIEW LOGIC ---
         
-        // Function to check search button state
         function checkSearchButtonState() {
              if (faceUpload.files.length > 0 && eventSelect.value) {
                 searchButton.disabled = false;
@@ -167,7 +212,6 @@
             }
         }
 
-        // Search logic
         uploadButton.addEventListener('click', () => faceUpload.click());
         faceUpload.addEventListener('change', (event) => {
             const file = event.target.files[0];
@@ -187,7 +231,7 @@
             uploadSection.classList.add('hidden');
             resultsSection.classList.remove('hidden');
             resultsGrid.innerHTML = '';
-            loadingText.textContent = "Đang liên hệ server...";
+            loadingText.textContent = "Đang phân tích khuôn mặt và tìm kiếm... (việc này có thể mất một lúc)";
             loadingIndicator.classList.remove('hidden');
 
             const formData = new FormData();
@@ -196,15 +240,15 @@
 
             try {
                 const response = await fetch(`${API_BASE_URL}/search/`, { method: 'POST', body: formData });
-                if (!response.ok) throw new Error(`Lỗi server: ${response.statusText}`);
                 const data = await response.json();
-                loadingText.textContent = "Server đã phản hồi. Đang tải kết quả...";
+                if (!response.ok) throw new Error(data.message || data.detail || 'Lỗi server');
+                loadingText.textContent = "Đã tìm xong! Đang hiển thị kết quả...";
                 setTimeout(() => {
                     loadingIndicator.classList.add('hidden');
                     displayResults(data.matching_images);
                 }, 500);
             } catch (error) {
-                loadingText.textContent = `Không thể kết nối đến server. Lỗi: ${error.message}`;
+                loadingText.textContent = `Không thể kết nối hoặc đã xảy ra lỗi. Lỗi: ${error.message}`;
             }
         });
 
@@ -219,7 +263,7 @@
 
         function displayResults(images) {
             if (!images || images.length === 0) {
-                resultsGrid.innerHTML = '<p class="col-span-full text-center text-gray-600">Không tìm thấy ảnh nào khớp trong sự kiện này.</p>';
+                resultsGrid.innerHTML = '<p class="col-span-full text-center text-gray-600">Không tìm thấy ảnh nào có khuôn mặt của bạn trong sự kiện này.</p>';
                 return;
             }
             images.forEach(imageUrl => {
@@ -233,60 +277,192 @@
             });
         }
         
-        // Function to check admin button state
-        function checkAdminButtonState() {
-            if (eventNameInput.value.trim() && eventUpload.files.length > 0) {
-                submitEventPhotosButton.disabled = false;
-                submitEventPhotosButton.classList.remove('opacity-50', 'cursor-not-allowed');
-            } else {
-                submitEventPhotosButton.disabled = true;
-                submitEventPhotosButton.classList.add('opacity-50', 'cursor-not-allowed');
+        // --- ADMIN VIEW LOGIC ---
+
+        function showAdminEventListView() {
+            adminEventListView.classList.remove('hidden');
+            adminManageEventView.classList.add('hidden');
+            loadAdminEvents();
+        }
+
+        function showAdminManageEventView(eventName) {
+            adminEventListView.classList.add('hidden');
+            adminManageEventView.classList.remove('hidden');
+            manageEventNameSpan.textContent = eventName;
+            addPhotosSubmitButton.dataset.eventName = eventName;
+            loadEventImages(eventName);
+        }
+
+        backToListButton.addEventListener('click', showAdminEventListView);
+
+        async function loadAdminEvents() {
+            adminEventsContainer.innerHTML = '<p>Đang tải...</p>';
+            try {
+                const response = await fetch(`${API_BASE_URL}/events/`);
+                const data = await response.json();
+                adminEventsContainer.innerHTML = '';
+                if (data.events && data.events.length > 0) {
+                    data.events.forEach(eventName => {
+                        const eventDiv = document.createElement('div');
+                        eventDiv.className = 'flex justify-between items-center p-3 bg-white border rounded-lg';
+                        eventDiv.innerHTML = `
+                            <span class="font-medium">${eventName}</span>
+                            <div>
+                                <button class="btn-secondary text-sm mr-2" onclick="showAdminManageEventView('${eventName}')">Quản lý</button>
+                                <button class="btn-danger text-sm" onclick="deleteEvent('${eventName}')">Xóa</button>
+                            </div>
+                        `;
+                        adminEventsContainer.appendChild(eventDiv);
+                    });
+                } else {
+                    adminEventsContainer.innerHTML = '<p class="text-gray-500">Chưa có sự kiện nào.</p>';
+                }
+            } catch (error) {
+                adminEventsContainer.innerHTML = `<p class="text-red-500">Lỗi tải danh sách sự kiện.</p>`;
+            }
+        }
+        
+        async function loadEventImages(eventName) {
+            adminImagesGrid.innerHTML = '<p>Đang tải ảnh...</p>';
+            try {
+                const response = await fetch(`${API_BASE_URL}/admin/events/${eventName}/images/`);
+                const data = await response.json();
+                adminImagesGrid.innerHTML = '';
+                if (data.images && data.images.length > 0) {
+                    data.images.forEach(imageUrl => {
+                        const imageName = imageUrl.split('/').pop();
+                        const imgContainer = document.createElement('div');
+                        imgContainer.className = 'relative group';
+                        imgContainer.innerHTML = `
+                            <img src="${imageUrl}" class="object-cover w-full h-full rounded-lg shadow-md">
+                            <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button class="btn-danger" onclick="deleteImage('${eventName}', '${imageName}')">Xóa</button>
+                            </div>
+                        `;
+                        adminImagesGrid.appendChild(imgContainer);
+                    });
+                } else {
+                    adminImagesGrid.innerHTML = '<p class="text-gray-500 col-span-full">Sự kiện này chưa có ảnh nào.</p>';
+                }
+            } catch (error) {
+                 adminImagesGrid.innerHTML = `<p class="text-red-500 col-span-full">Lỗi tải ảnh.</p>`;
             }
         }
 
-        // Admin logic
-        eventUploadButton.addEventListener('click', () => eventUpload.click());
-        eventNameInput.addEventListener('input', checkAdminButtonState);
-        eventUpload.addEventListener('change', () => {
-            const numFiles = eventUpload.files.length;
-            if (numFiles > 0) {
-                filesSelectedInfo.textContent = `Đã chọn ${numFiles} file.`;
+        // Create New Event
+        newEventSelectPhotosButton.addEventListener('click', () => newEventUpload.click());
+        newEventUpload.addEventListener('change', checkCreateEventButtonState);
+        newEventNameInput.addEventListener('input', checkCreateEventButtonState);
+
+        function checkCreateEventButtonState() {
+            const files = newEventUpload.files;
+            if (files.length > 0) {
+                 newEventFilesInfo.textContent = `Đã chọn ${files.length} file.`;
             } else {
-                filesSelectedInfo.textContent = '';
+                 newEventFilesInfo.textContent = '';
             }
-            checkAdminButtonState();
+            if (newEventNameInput.value.trim() && files.length > 0) {
+                createNewEventButton.disabled = false;
+                createNewEventButton.classList.remove('opacity-50', 'cursor-not-allowed');
+            } else {
+                createNewEventButton.disabled = true;
+                createNewEventButton.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
+        createNewEventButton.addEventListener('click', async () => {
+            const eventName = newEventNameInput.value.trim();
+            const files = newEventUpload.files;
+            await uploadPhotos(eventName, files);
+            newEventNameInput.value = '';
+            newEventUpload.value = '';
+            checkCreateEventButtonState();
+            loadAdminEvents();
         });
 
-        submitEventPhotosButton.addEventListener('click', async () => {
-            const files = eventUpload.files;
-            const eventName = eventNameInput.value.trim();
-            if (files.length === 0 || !eventName) return;
+        // Add More Photos to Existing Event
+        addPhotosSelectButton.addEventListener('click', () => addPhotosUpload.click());
+        addPhotosUpload.addEventListener('change', checkAddPhotosButtonState);
+        
+        function checkAddPhotosButtonState() {
+            const files = addPhotosUpload.files;
+            if (files.length > 0) {
+                 addPhotosFilesInfo.textContent = `Đã chọn ${files.length} file để thêm.`;
+            } else {
+                 addPhotosFilesInfo.textContent = '';
+            }
+             if (files.length > 0) {
+                addPhotosSubmitButton.disabled = false;
+                addPhotosSubmitButton.classList.remove('opacity-50', 'cursor-not-allowed');
+            } else {
+                addPhotosSubmitButton.disabled = true;
+                addPhotosSubmitButton.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+        }
 
+        addPhotosSubmitButton.addEventListener('click', async () => {
+            const eventName = addPhotosSubmitButton.dataset.eventName;
+            const files = addPhotosUpload.files;
+            await uploadPhotos(eventName, files);
+            addPhotosUpload.value = '';
+            checkAddPhotosButtonState();
+            loadEventImages(eventName);
+        });
+
+        async function uploadPhotos(eventName, files) {
+            if (!eventName || files.length === 0) return;
             const formData = new FormData();
             formData.append('event_name', eventName);
             for (const file of files) {
                 formData.append('files', file);
             }
-
-            adminStatus.textContent = `Đang tải ${files.length} ảnh lên sự kiện '${eventName}'...`;
-            adminStatus.classList.remove('text-green-600', 'text-red-600');
-
+            adminGlobalStatus.textContent = `Đang tải ${files.length} ảnh và xử lý...`;
+            adminGlobalStatus.className = 'mt-4 font-medium text-blue-600';
             try {
-                const response = await fetch(`${API_BASE_URL}/create_event/`, { method: 'POST', body: formData });
-                if (!response.ok) throw new Error(`Lỗi server: ${response.statusText}`);
+                const response = await fetch(`${API_BASE_URL}/admin/events/`, { method: 'POST', body: formData });
                 const data = await response.json();
-                adminStatus.textContent = data.message;
-                adminStatus.classList.add('text-green-600');
+                if (!response.ok) throw new Error(data.detail || 'Lỗi server');
+                adminGlobalStatus.textContent = data.message;
+                adminGlobalStatus.className = 'mt-4 font-medium text-green-600';
             } catch (error) {
-                adminStatus.textContent = `Tải lên thất bại. Lỗi: ${error.message}`;
-                adminStatus.classList.add('text-red-600');
-            } finally {
-                eventUpload.value = '';
-                eventNameInput.value = '';
-                filesSelectedInfo.textContent = '';
-                checkAdminButtonState();
+                adminGlobalStatus.textContent = `Lỗi: ${error.message}`;
+                adminGlobalStatus.className = 'mt-4 font-medium text-red-600';
             }
-        });
+        }
+
+        async function deleteEvent(eventName) {
+            if (!confirm(`Bạn có chắc chắn muốn xóa vĩnh viễn sự kiện "${eventName}" và toàn bộ ảnh bên trong không?`)) return;
+            adminGlobalStatus.textContent = `Đang xóa sự kiện "${eventName}"...`;
+            adminGlobalStatus.className = 'mt-4 font-medium text-blue-600';
+            try {
+                const response = await fetch(`${API_BASE_URL}/admin/events/${eventName}/`, { method: 'DELETE' });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.detail || 'Lỗi server');
+                adminGlobalStatus.textContent = data.message;
+                adminGlobalStatus.className = 'mt-4 font-medium text-green-600';
+                loadAdminEvents();
+            } catch (error) {
+                adminGlobalStatus.textContent = `Lỗi: ${error.message}`;
+                adminGlobalStatus.className = 'mt-4 font-medium text-red-600';
+            }
+        }
+        
+        async function deleteImage(eventName, imageName) {
+             if (!confirm(`Bạn có chắc muốn xóa ảnh này khỏi sự kiện "${eventName}" không?`)) return;
+             adminGlobalStatus.textContent = `Đang xóa ảnh "${imageName}"...`;
+             adminGlobalStatus.className = 'mt-4 font-medium text-blue-600';
+             try {
+                const response = await fetch(`${API_BASE_URL}/admin/events/${eventName}/images/${imageName}`, { method: 'DELETE' });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.detail || 'Lỗi server');
+                adminGlobalStatus.textContent = data.message;
+                adminGlobalStatus.className = 'mt-4 font-medium text-green-600';
+                loadEventImages(eventName);
+            } catch (error) {
+                adminGlobalStatus.textContent = `Lỗi: ${error.message}`;
+                adminGlobalStatus.className = 'mt-4 font-medium text-red-600';
+            }
+        }
     </script>
 </body>
 </html>
